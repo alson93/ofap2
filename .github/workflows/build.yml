@@ -12,11 +12,11 @@ jobs:
           mkdir -p out
           SRC=$(dirname "$(find . -name fa_slice.c | head -1)")/..
           echo "SRC=$(realpath $SRC)" >> $GITHUB_ENV
-      - name: Build in Debian 11 (glibc 2.31)
+      - name: Build in Ubuntu 20.04 (glibc 2.31)
         run: |
           REL=$(realpath --relative-to="$PWD" "$SRC")
-          docker run --rm -v "$PWD":/work -w "/work/$REL" debian:bullseye bash -c '
-            apt-get update && apt-get install -y gcc libsdl2-dev &&
+          docker run --rm -e DEBIAN_FRONTEND=noninteractive -v "$PWD":/work -w "/work/$REL" ubuntu:20.04 bash -c '
+            apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev libsdl2-dev &&
             gcc -std=gnu11 -O2 -Iinclude -DFA_HAVE_SDL2=1 \
               src/core/*.c src/game/*.c src/app/*.c \
               src/platform/fa_platform.c src/platform/fa_backend_null.c \

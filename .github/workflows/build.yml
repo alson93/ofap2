@@ -1,0 +1,29 @@
+name: Build OpenFA aarch64
+on: [workflow_dispatch, push]
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip source (any zip name)
+        run: |
+          ls -la
+          unzip -q ./*.zip
+          mkdir -p out
+          SRC=$(dirname "$(find . -name fa_slice.c | head -1)")/..
+          echo "SRC=$(realpath $SRC)" >> $GITHUB_ENV
+      - name: Build in Debian 11 (glibc 2.31)
+        run: |
+          REL=$(realpath --relative-to="$PWD" "$SRC")
+          docker run --rm -v "$PWD":/work -w "/work/$REL" debian:bullseye bash -c '
+            apt-get update && apt-get install -y gcc libsdl2-dev &&
+            gcc -std=gnu11 -O2 -Iinclude -DFA_HAVE_SDL2=1 \
+              src/core/*.c src/game/*.c src/app/*.c \
+              src/platform/fa_platform.c src/platform/fa_backend_null.c \
+              src/platform/fa_backend_sdl2.c src/platform/fa_time_posix.c \
+              src/platform/fa_paths_posix.c tools/fa_slice.c \
+              $(sdl2-config --cflags --libs) -lm -o /work/out/OpenFA.aarch64'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenFA.aarch64
+          path: out/OpenFA.aarch64
